@@ -1,87 +1,114 @@
-"""Eight SPARQL queries against the publications ontology.
-
-Each function returns a SPARQL query string. See learner_notes.md for the
-intent and result snapshot per query.
-"""
-
-
 def q1():
-    """Q1 — List all authors who have published at venue :NeurIPS.
+    """Q1 — List all authors who have published at venue :NeurIPS."""
+    return """
+    PREFIX : <http://aispire.example.org/publications/>
 
-    Variables in the SELECT: ?author.
+    SELECT DISTINCT ?author
+    WHERE {
+        ?paper :publishedIn :NeurIPS ;
+               :authoredBy ?author .
+    }
     """
-    # TODO: SELECT distinct authors of papers where ?paper :publishedIn :NeurIPS.
-    return ""
 
 
 def q2():
-    """Q2 — For each topic, count the number of papers on that topic.
+    """Q2 — For each topic, count the number of papers on that topic."""
+    return """
+    PREFIX : <http://aispire.example.org/publications/>
 
-    Variables in the SELECT: ?topic ?n.
-    Use GROUP BY ?topic and COUNT(?paper) AS ?n.
+    SELECT ?topic (COUNT(?paper) AS ?n)
+    WHERE {
+        ?paper :topic ?topic .
+    }
+    GROUP BY ?topic
     """
-    # TODO: SELECT with GROUP BY topic.
-    return ""
-
+    
 
 def q3():
-    """Q3 — All author-coauthor pairs in canonical form.
+    """Q3 — All author-coauthor pairs in canonical form."""
+    return """
+    PREFIX : <http://aispire.example.org/publications/>
 
-    Variables in the SELECT: ?a ?b.
-
-    Two requirements (omit either and the row count is wrong):
-    1. `SELECT DISTINCT ?a ?b` — coauthors who share multiple papers
-       otherwise produce one row per shared paper (~230 rows on this
-       fixture); DISTINCT collapses them to one row per pair (~215).
-    2. `FILTER (str(?a) < str(?b))` — without it, each unordered pair
-       appears twice (a,b) and (b,a).
+    SELECT DISTINCT ?a ?b
+    WHERE {
+        ?p :authoredBy ?a , ?b .
+        FILTER (?a != ?b)
+        FILTER (STR(?a) < STR(?b))
+    }
     """
-    # TODO: SELECT DISTINCT ?a ?b WHERE { ?p :authoredBy ?a, ?b . FILTER ... }
-    return ""
 
 
 def q4():
-    """Q4 — Every paper and its DOI, DOI OPTIONAL.
+    """Q4 — Every paper and its DOI, DOI OPTIONAL."""
+    return """
+    PREFIX : <http://aispire.example.org/publications/>
 
-    Variables in the SELECT: ?paper ?doi.
-    The :doi triple must live inside OPTIONAL { ... } — putting it in the
-    main WHERE drops papers without a DOI.
+    SELECT ?paper ?doi
+    WHERE {
+        ?paper a :Paper .
+        OPTIONAL {
+            ?paper :doi ?doi .
+        }
+    }
     """
-    # TODO: ?paper a :Paper . OPTIONAL { ?paper :doi ?doi } .
-    return ""
 
 
 def q5():
-    """Q5 — ASK whether any author has more than 10 papers.
+    """Q5 — ASK whether any author has more than 10 papers."""
+    return """
+    PREFIX : <http://aispire.example.org/publications/>
 
-    Returns a boolean.
+    ASK {
+        {
+            SELECT ?author
+            WHERE {
+                ?paper :authoredBy ?author .
+            }
+            GROUP BY ?author
+            HAVING (COUNT(?paper) > 10)
+        }
+    }
     """
-    # TODO: ASK against a sub-SELECT that COUNTs papers per author with HAVING.
-    return ""
 
 
 def q6():
-    """Q6 — CONSTRUCT a graph of 2023 papers and their authors.
+    """Q6 — CONSTRUCT a graph of 2023 papers and their authors."""
+    return """
+    PREFIX : <http://aispire.example.org/publications/>
 
-    Returns triples ?paper :authoredBy ?author for papers with :year 2023.
+    CONSTRUCT {
+        ?paper :authoredBy ?author .
+    }
+    WHERE {
+        ?paper :year 2023 ;
+               :authoredBy ?author .
+    }
     """
-    # TODO: CONSTRUCT { ... } WHERE { ?paper :year 2023 ; :authoredBy ?author }
-    return ""
 
 
 def q7():
-    """Q7 — Top 5 most-cited papers by literal :citationCount, DESC.
+    """Q7 — Top 5 most-cited papers by literal :citationCount, DESC."""
+    return """
+    PREFIX : <http://aispire.example.org/publications/>
 
-    Variables in the SELECT: ?paper ?cc.
+    SELECT ?paper ?cc
+    WHERE {
+        ?paper :citationCount ?cc .
+    }
+    ORDER BY DESC(?cc)
+    LIMIT 5
     """
-    # TODO: ORDER BY DESC(?cc) LIMIT 5 against ?paper :citationCount ?cc.
-    return ""
 
 
 def q8():
-    """Q8 — Authors whose name matches "Hinton" via skos:prefLabel OR skos:altLabel.
+    """Q8 — Authors whose name matches "Hinton" via skos:prefLabel OR skos:altLabel."""
+    return """
+   PREFIX : <http://aispire.example.org/publications/>
+   PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
 
-    Variables in the SELECT: ?author.
+  SELECT ?author
+  WHERE {
+    ?author ?label "Hinton" .
+    FILTER (?label = skos:prefLabel || ?label = skos:altLabel)
+    }
     """
-    # TODO: union of prefLabel / altLabel matches on "Hinton".
-    return ""
